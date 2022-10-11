@@ -30,17 +30,21 @@ import torchvision
 if float(torchvision.__version__[:3]) < 0.5:
     import math
     # from torchvision.ops.misc import _NewEmptyTensorOp
+
     def _check_size_scale_factor(dim, size, scale_factor):
         # type: (int, Optional[List[int]], Optional[float]) -> None
         if size is None and scale_factor is None:
             raise ValueError("either size or scale_factor should be defined")
         if size is not None and scale_factor is not None:
-            raise ValueError("only one of size or scale_factor should be defined")
+            raise ValueError(
+                "only one of size or scale_factor should be defined")
         if not (scale_factor is not None and len(scale_factor) != dim):
             raise ValueError(
                 "scale_factor shape must match input shape. "
-                "Input is {}D, scale_factor size is {}".format(dim, len(scale_factor))
+                "Input is {}D, scale_factor size is {}".format(
+                    dim, len(scale_factor))
             )
+
     def _output_size(dim, input, size, scale_factor):
         # type: (int, Tensor, Optional[List[int]], Optional[float]) -> List[int]
         assert dim == 2
@@ -48,7 +52,8 @@ if float(torchvision.__version__[:3]) < 0.5:
         if size is not None:
             return size
         # if dim is not 2 or scale_factor is iterable use _ntuple instead of concat
-        assert scale_factor is not None and isinstance(scale_factor, (int, float))
+        assert scale_factor is not None and isinstance(
+            scale_factor, (int, float))
         scale_factors = [scale_factor, scale_factor]
         # math.floor might return float in py2.7
         return [
@@ -83,7 +88,8 @@ class SmoothedValue(object):
         """
         if not is_dist_avail_and_initialized():
             return
-        t = torch.tensor([self.count, self.total], dtype=torch.float64, device='cuda')
+        t = torch.tensor([self.count, self.total],
+                         dtype=torch.float64, device='cuda')
         dist.barrier()
         dist.all_reduce(t)
         t = t.tolist()
@@ -150,9 +156,11 @@ def all_gather(data):
     # gathering tensors of different shapes
     tensor_list = []
     for _ in size_list:
-        tensor_list.append(torch.empty((max_size,), dtype=torch.uint8, device="cuda"))
+        tensor_list.append(torch.empty(
+            (max_size,), dtype=torch.uint8, device="cuda"))
     if local_size != max_size:
-        padding = torch.empty(size=(max_size - local_size,), dtype=torch.uint8, device="cuda")
+        padding = torch.empty(size=(max_size - local_size,),
+                              dtype=torch.uint8, device="cuda")
         tensor = torch.cat((tensor, padding), dim=0)
     dist.all_gather(tensor_list, tensor)
 
@@ -509,6 +517,7 @@ def get_total_grad_norm(parameters, norm_type=2):
     total_norm = torch.norm(torch.stack([torch.norm(p.grad.detach(), norm_type).to(device) for p in parameters]),
                             norm_type)
     return total_norm
+
 
 def inverse_sigmoid(x, eps=1e-5):
     x = x.clamp(min=0, max=1)

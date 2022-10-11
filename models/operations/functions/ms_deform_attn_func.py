@@ -42,32 +42,40 @@ class MSDeformAttnFunction(Function):
         return grad_value, None, None, grad_sampling_loc, grad_attn_weight, None
 """
 
+
 def ms_deform_attn_core_pytorch(value, value_spatial_shapes, sampling_locations, attention_weights):
     # TODO Non-CUDA version, needs revision
-    B_, _, n_heads_, C_ = value.shape #* batch_num, patch_len, n_heads, embedding_dim
-    B_, L_query_, n_heads_, n_levels_, n_points_, C_ = sampling_locations.shape #* batch_num, len_query, n_heads, n_levels_, n_points, embedding_dim
-
-
+    # * batch_num, patch_len, n_heads, embedding_dim
+    B_, _, n_heads_, C_ = value.shape
+    # * batch_num, len_query, n_heads, n_levels_, n_points, embedding_dim
+    B_, L_query_, n_heads_, n_levels_, n_points_, C_ = sampling_locations.shape
 
     # N_, _, M_, D_ = value.shape #* batch_num, patch_len, n_heads, embedding_dim
     # _, Lq_, M_, L_, P_, _ = sampling_locations.shape
-    value_list = value.split([H_ * W_ for H_, W_ in value_spatial_shapes], dim=1) #* reform multi-level feature patch maps in a list
-    sampling_grids = 2 * sampling_locations - 1 #? why do this?
+
+    # * reform multi-level feature patch maps in a list
+    value_list = value.split(
+        [H_ * W_ for H_, W_ in value_spatial_shapes], dim=1)
+    sampling_grids = 2 * sampling_locations - 1  # ? why do this?
     sampling_value_list = []
     for lid_, (H_, W_) in enumerate(value_spatial_shapes):
 
-        #* B_, H_*W_, n_heads_, C_ -> N_, H_*W_, M_*D_ -> N_, M_*D_, H_*W_ -> N_*M_, D_, H_, W_
-        value_l_ = value_list[lid_].flatten(2).transpose(1, 2).reshape(B_*n_heads_, C_, H_, W_)
+        # * B_, H_*W_, n_heads_, C_ -> N_, H_*W_, M_*D_ -> N_, M_*D_, H_*W_ -> N_*M_, D_, H_, W_
+        value_l_ = value_list[lid_].flatten(2).transpose(
+            1, 2).reshape(B_*n_heads_, C_, H_, W_)
 
-        #* B_, L_query_, n_heads_, n_points_, 2 -> B_, n_heads_, L_query_, n_points_, 2 -> B_*n_heads_, L_query_, n_points_, 2
-        sampling_grid_l_ = sampling_grids[:, :, :, lid_].transpose(1, 2).flatten(0, 1)
+        # * B_, L_query_, n_heads_, n_points_, 2 -> B_, n_heads_, L_query_, n_points_, 2 -> B_*n_heads_, L_query_, n_points_, 2
+        sampling_grid_l_ = sampling_grids[:, :,
+                                          :, lid_].transpose(1, 2).flatten(0, 1)
 
         #* B_*n_heads_, C_, L_query_, n_points_
         sampling_value_l_ = F.grid_sample(value_l_, sampling_grid_l_,
-                                          mode='bilinear', padding_mode='zeros', align_corners=False) #* use bilinear because sometimes the normalized sampling_grid_l_ may not have an integer corresponding location
+                                          mode='bilinear', padding_mode='zeros', align_corners=False)  # * use bilinear because sometimes the normalized sampling_grid_l_ may not have an integer corresponding location
         sampling_value_list.append(sampling_value_l_)
-    
-    #* (B_, L_query_, n_heads_, n_levels_, n_points_) -> (B_, n_heads_, L_query_, n_levels_, n_points_) -> (B_, n_heads_, 1, L_query_, n_levels_*n_points_)
-    attention_weights = attention_weights.transpose(1, 2).reshape(B_*n_heads_, 1, L_query_, L_query_*n_points_)
-    output = (torch.stack(sampling_value_list, dim=-2).flatten(-2) * attention_weights).sum(-1).view(B_, n_heads_*C_, L_query_)
+
+    # * (B_, L_query_, n_heads_, n_levels_, n_points_) -> (B_, n_heads_, L_query_, n_levels_, n_points_) -> (B_, n_heads_, 1, L_query_, n_levels_*n_points_)
+    attention_weights = attention_weights.transpose(1, 2).reshape(
+        B_*n_heads_, 1, L_query_, L_query_*n_points_)
+    output = (torch.stack(sampling_value_list, dim=-2).flatten(-2) *
+              attention_weights).sum(-1).view(B_, n_heads_*C_, L_query_)
     return output.transpose(1, 2).contiguous()

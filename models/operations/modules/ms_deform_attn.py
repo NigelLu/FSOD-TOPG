@@ -24,7 +24,8 @@ from ..functions import MSDeformAttnFunction
 
 def _is_power_of_2(n):
     if (not isinstance(n, int)) or (n < 0):
-        raise ValueError("invalid input for _is_power_of_2: {} (type: {})".format(n, type(n)))
+        raise ValueError(
+            "invalid input for _is_power_of_2: {} (type: {})".format(n, type(n)))
     return (n & (n-1) == 0) and n != 0
 
 
@@ -39,22 +40,26 @@ class MSDeformAttn(nn.Module):
         """
         super().__init__()
         if d_model % n_heads != 0:
-            raise ValueError('d_model must be divisible by n_heads, but got {} and {}'.format(d_model, n_heads))
+            raise ValueError(
+                'd_model must be divisible by n_heads, but got {} and {}'.format(d_model, n_heads))
         _d_per_head = d_model // n_heads
-        #* you'd better set _d_per_head to a power of 2 which is more efficient in our CUDA implementation
+        # * you'd better set _d_per_head to a power of 2 which is more efficient in our CUDA implementation
         if not _is_power_of_2(_d_per_head):
             warnings.warn("You'd better set d_model in MSDeformAttn to make the dimension of each attention head a power of 2 "
                           "which is more efficient in our CUDA implementation.")
 
-        self.im2col_step = 64 #? what is this for?
+        self.im2col_step = 64  # ? what is this for?
 
         self.d_model = d_model
         self.n_levels = n_levels
         self.n_heads = n_heads
         self.n_points = n_points
 
-        self.sampling_offsets = nn.Linear(d_model, n_heads * n_levels * n_points * 2) #* offset for W & H
-        self.attention_weights = nn.Linear(d_model, n_heads * n_levels * n_points) #* adaptively calculate the weight for each offset point
+        self.sampling_offsets = nn.Linear(
+            d_model, n_heads * n_levels * n_points * 2)  # * offset for W & H
+        # * adaptively calculate the weight for each offset point
+        self.attention_weights = nn.Linear(
+            d_model, n_heads * n_levels * n_points)
         self.value_proj = nn.Linear(d_model, d_model)
         self.output_proj = nn.Linear(d_model, d_model)
 
@@ -62,10 +67,12 @@ class MSDeformAttn(nn.Module):
 
     def _reset_parameters(self):
         constant_(self.sampling_offsets.weight.data, 0.)
-        #? read and understand why init params like this
-        thetas = torch.arange(self.n_heads, dtype=torch.float32) * (2.0 * math.pi / self.n_heads)
+        # ? read and understand why init params like this
+        thetas = torch.arange(
+            self.n_heads, dtype=torch.float32) * (2.0 * math.pi / self.n_heads)
         grid_init = torch.stack([thetas.cos(), thetas.sin()], -1)
-        grid_init = (grid_init / grid_init.abs().max(-1, keepdim=True)[0]).view(self.n_heads, 1, 1, 2).repeat(1, self.n_levels, self.n_points, 1)
+        grid_init = (grid_init / grid_init.abs().max(-1, keepdim=True)[0]).view(
+            self.n_heads, 1, 1, 2).repeat(1, self.n_levels, self.n_points, 1)
         for i in range(self.n_points):
             grid_init[:, :, i, :] *= i + 1
         with torch.no_grad():
@@ -89,33 +96,47 @@ class MSDeformAttn(nn.Module):
 
         :return output                     (N, Length_{query}, C)
         """
-        #* N here is batch_num
+        # * N here is batch_num
         N, Len_q, _ = query.shape
-        N, Len_in, _ = input_flatten.shape #* all levels of feature flattened, into one long vector -> (N, num_patches_from_all_levels, C)
-        assert (input_spatial_shapes[:, 0] * input_spatial_shapes[:, 1]).sum() == Len_in
+        # * all levels of feature flattened, into one long vector -> (N, num_patches_from_all_levels, C)
+        N, Len_in, _ = input_flatten.shape
+        assert (input_spatial_shapes[:, 0] *
+                input_spatial_shapes[:, 1]).sum() == Len_in
 
-        value = self.value_proj(input_flatten) #? linear d_model -> d_model, how to make sure that input_flatten C is always d_model
+        # ? linear d_model -> d_model, how to make sure that input_flatten C is always d_model
+        value = self.value_proj(input_flatten)
         if input_padding_mask is not None:
-            value = value.masked_fill(input_padding_mask[..., None], float(0)) #* Tensor.masked_fill -- fill all True positions on the mask with the specified value
+            # * Tensor.masked_fill -- fill all True positions on the mask with the specified value
+            value = value.masked_fill(input_padding_mask[..., None], float(0))
 
-        value = value.view(N, Len_in, self.n_heads, self.d_model // self.n_heads) #* channel_dim -> (n_heads, channel_dim // n_heads)
+        # * channel_dim -> (n_heads, channel_dim // n_heads)
+        value = value.view(N, Len_in, self.n_heads,
+                           self.d_model // self.n_heads)
 
-        sampling_offsets = self.sampling_offsets(query).view(N, Len_q, self.n_heads, self.n_levels, self.n_points, 2) #* d_model -> n_heads * n_levels * n_points * 2
+        sampling_offsets = self.sampling_offsets(query).view(
+            N, Len_q, self.n_heads, self.n_levels, self.n_points, 2)  # * d_model -> n_heads * n_levels * n_points * 2
 
-        attention_weights = self.attention_weights(query).view(N, Len_q, self.n_heads, self.n_levels * self.n_points)
-        attention_weights = F.softmax(attention_weights, -1).view(N, Len_q, self.n_heads, self.n_levels, self.n_points)
+        attention_weights = self.attention_weights(query).view(
+            N, Len_q, self.n_heads, self.n_levels * self.n_points)
+        attention_weights = F.softmax(
+            attention_weights, -1).view(N, Len_q, self.n_heads, self.n_levels, self.n_points)
 
         #* N, Len_q, n_heads, n_levels, n_points, 2
-        if reference_points.shape[-1] == 2: #* with only (x, y)
+        if reference_points.shape[-1] == 2:  # * with only (x, y)
 
-            offset_normalizer = torch.stack([input_spatial_shapes[..., 1], input_spatial_shapes[..., 0]], -1) #* (H, W) -> (W, H), 归一化
+            offset_normalizer = torch.stack(
+                [input_spatial_shapes[..., 1], input_spatial_shapes[..., 0]], -1)  # * (H, W) -> (W, H), 归一化
             sampling_locations = reference_points[:, :, None, :, None, :] \
-                                 + sampling_offsets / offset_normalizer[None, None, None, :, None, :] #* taking [..., 0] = [:, 0], using [None] is the same as 'unsqueeze(<dim_num>)' 
-        
-        elif reference_points.shape[-1] == 4: #* with (x, y, w, h) to form reference boxes as well
+                + sampling_offsets / offset_normalizer[None, None, None, :, None,
+                                                       :]  # * taking [..., 0] = [:, 0], using [None] is the same as 'unsqueeze(<dim_num>)'
+
+        # * with (x, y, w, h) to form reference boxes as well
+        elif reference_points.shape[-1] == 4:
 
             sampling_locations = reference_points[:, :, None, :, None, :2] \
-                                 + sampling_offsets / self.n_points * reference_points[:, :, None, :, None, 2:] * 0.5 #? why not use offset_normalizer
+                + sampling_offsets / self.n_points * \
+                reference_points[:, :, None, :, None, 2:] * \
+                0.5  # ? why not use offset_normalizer
         else:
             raise ValueError(
                 'Last dim of reference_points must be 2 or 4, but get {} instead.'.format(reference_points.shape[-1]))
