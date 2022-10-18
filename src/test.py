@@ -1,5 +1,9 @@
+import pdb
 import torch
+import util.misc as utils
 from util.misc import NestedTensor
+from torch.utils.data import DataLoader
+from datasets import coco_base_class_ids, coco_novel_class_ids, build_dataset
 
 from models import backbone
 
@@ -8,6 +12,35 @@ class ArgWrapper:
         return
 
 args = ArgWrapper()
+
+#region Test dataset
+args.cache_mode = False
+args.total_num_support = 15
+args.max_pos_support = 10
+args.dataset_file = 'coco'
+args.image_set = 'train'
+args.batch_size = 10
+
+dataset = build_dataset(args.image_set, args)
+sampler = torch.utils.data.RandomSampler(dataset)
+
+batch_sampler_train = torch.utils.data.BatchSampler(sampler, args.batch_size, drop_last=False)
+
+data_loader = DataLoader(dataset,
+                        batch_sampler=batch_sampler_train,
+                        collate_fn=utils.collate_fn,
+                        num_workers=0,
+                        pin_memory=True)
+
+for samples, targets, support_images, support_class_ids, support_targets in data_loader:
+    print(f'samples: {type(samples)}, tensors: {samples.tensors.shape}\n')
+    break
+
+
+
+#endregion Test dataset
+
+#region Test backbone
 args.hidden_dim = 512
 args.position_embedding = 'sine'
 args.lr_backbone = 0.05
@@ -16,8 +49,6 @@ args.backbone = 'resnet50'
 args.dilation = True
 args.masks = None
 
-
-#region Test backbone
 print(f'Backbone test start...')
 
 img = torch.randn((5, 3, 473, 473))                             #* assume batch size = 5
