@@ -1,11 +1,13 @@
-# ------------------------------------------------------------------------
-# Deformable DETR
+# ------------------------------------------------------------------------------------
+# FSOD-TOPG Codebase (https://github.com/NigelLu/FSOD-TOPG)
+# ------------------------------------------------------------------------------------
+# Modified from Deformable DETR (https://github.com/fundamentalvision/Deformable-DETR)
 # Copyright (c) 2020 SenseTime. All Rights Reserved.
 # Licensed under the Apache License, Version 2.0 [see LICENSE for details]
-# ------------------------------------------------------------------------
-# Modified from DETR (https://github.com/facebookresearch/detr)
+# ------------------------------------------------------------------------------------
+# Originated from DETR (https://github.com/facebookresearch/detr)
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
-# ------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------
 
 """
 COCO evaluator that works in distributed mode.

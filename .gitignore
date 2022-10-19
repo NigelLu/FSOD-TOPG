@@ -1,1 +1,3 @@
 __pycache__/
+output
+src/script/*.out
