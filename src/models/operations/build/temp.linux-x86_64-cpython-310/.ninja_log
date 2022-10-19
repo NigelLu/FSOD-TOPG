@@ -1,0 +1,4 @@
+# ninja log v5
+0	9990	1666157425880617222	/scratch/xl3139/FSOD-TOPG/src/models/operations/build/temp.linux-x86_64-cpython-310/scratch/xl3139/FSOD-TOPG/src/models/operations/src/cpu/ms_deform_attn_cpu.o	fdcb226d76ee735b
+1	37096	1666157452980763387	/scratch/xl3139/FSOD-TOPG/src/models/operations/build/temp.linux-x86_64-cpython-310/scratch/xl3139/FSOD-TOPG/src/models/operations/src/cuda/ms_deform_attn_cuda.o	38f5dadaa36771f3
+10005	37940	1666157453831240840	/scratch/xl3139/FSOD-TOPG/src/models/operations/build/temp.linux-x86_64-cpython-310/scratch/xl3139/FSOD-TOPG/src/models/operations/src/vision.o	40849e1d22754523
