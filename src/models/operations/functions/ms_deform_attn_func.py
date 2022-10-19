@@ -17,7 +17,7 @@ import torch
 import torch.nn.functional as F
 
 
-"""
+
 from torch.autograd import Function
 from torch.autograd.function import once_differentiable
 
@@ -42,7 +42,7 @@ class MSDeformAttnFunction(Function):
                 value, value_spatial_shapes, value_level_start_index, sampling_locations, attention_weights, grad_output, ctx.im2col_step)
 
         return grad_value, None, None, grad_sampling_loc, grad_attn_weight, None
-"""
+
 
 
 def ms_deform_attn_core_pytorch(value, value_spatial_shapes, sampling_locations, attention_weights):

@@ -137,15 +137,22 @@ class DeformableDETR(nn.Module):
         """
         if not isinstance(samples, NestedTensor):
             samples = nested_tensor_from_tensor_list(samples)
+        
+        # * feature_map<List>
+        # * positional_embedding<List>
         features, pos = self.backbone(samples)
 
         srcs = []
         masks = []
+
+        # * input projection on features
         for l, feat in enumerate(features):
             src, mask = feat.decompose()
             srcs.append(self.input_proj[l](src))
             masks.append(mask)
             assert mask is not None
+        
+        # * add the 4th feature map 
         if self.num_feature_levels > len(srcs):
             _len_srcs = len(srcs)
             for l in range(_len_srcs, self.num_feature_levels):
@@ -164,6 +171,7 @@ class DeformableDETR(nn.Module):
         query_embeds = None
         if not self.two_stage:
             query_embeds = self.query_embed.weight
+        
         hs, init_reference, inter_references, enc_outputs_class, enc_outputs_coord_unact = self.transformer(
             srcs, masks, pos, query_embeds)
 

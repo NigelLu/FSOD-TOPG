@@ -113,7 +113,7 @@ def get_coco_api_from_dataset(dataset):
         return dataset.coco
 
 
-def build_dataset(image_set, args):
+def build_dataset(image_set, args, with_support=True):
     assert image_set in ['train', 'val', 'fewshot'], "image_set must be 'train', 'val' or 'fewshot'."
     # For training set, need to perform base/novel category filtering.
     # For training set, we use dataset with support to construct meta-tasks
@@ -124,32 +124,32 @@ def build_dataset(image_set, args):
             ann_file = root / "annotations" / 'instances_train2017.json'
             class_ids = coco_base_class_ids + coco_novel_class_ids
             class_ids.sort()
-            return build(args, img_folder, ann_file, image_set, activated_class_ids=class_ids, with_support=True)
+            return build(args, img_folder, ann_file, image_set, activated_class_ids=class_ids, with_support=with_support)
         if args.dataset_file == 'coco_base':
             root = Path('data/coco')
             img_folder = root / "train2017"
             ann_file = root / "annotations" / 'instances_train2017.json'
-            return build(args, img_folder, ann_file, image_set, activated_class_ids=coco_base_class_ids, with_support=True)
+            return build(args, img_folder, ann_file, image_set, activated_class_ids=coco_base_class_ids, with_support=with_support)
         if args.dataset_file == 'voc':
             root = Path('data/voc')
             img_folder = root / "images"
             ann_file = root / "annotations" / 'pascal_trainval0712.json'
-            return build(args, img_folder, ann_file, image_set, activated_class_ids=list(range(1, 20+1)), with_support=True)
+            return build(args, img_folder, ann_file, image_set, activated_class_ids=list(range(1, 20+1)), with_support=with_support)
         if args.dataset_file == 'voc_base1':
             root = Path('data/voc')
             img_folder = root / "images"
             ann_file = root / "annotations" / 'pascal_trainval0712.json'
-            return build(args, img_folder, ann_file, image_set, activated_class_ids=voc_base1_class_ids, with_support=True)
+            return build(args, img_folder, ann_file, image_set, activated_class_ids=voc_base1_class_ids, with_support=with_support)
         if args.dataset_file == 'voc_base2':
             root = Path('data/voc')
             img_folder = root / "images"
             ann_file = root / "annotations" / 'pascal_trainval0712.json'
-            return build(args, img_folder, ann_file, image_set, activated_class_ids=voc_base2_class_ids, with_support=True)
+            return build(args, img_folder, ann_file, image_set, activated_class_ids=voc_base2_class_ids, with_support=with_support)
         if args.dataset_file == 'voc_base3':
             root = Path('data/voc')
             img_folder = root / "images"
             ann_file = root / "annotations" / 'pascal_trainval0712.json'
-            return build(args, img_folder, ann_file, image_set, activated_class_ids=voc_base3_class_ids, with_support=True)
+            return build(args, img_folder, ann_file, image_set, activated_class_ids=voc_base3_class_ids, with_support=with_support)
 
     # For valid set, no need to perform base/novel category filtering.
     # This is because that evaluation should be performed on all images.

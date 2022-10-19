@@ -1,14 +1,17 @@
 import os
-import random
-from PIL import Image
 import torch
+import random
 import torch.utils.data
+
+from PIL import Image
 from pycocotools.coco import COCO
 from pycocotools import mask as coco_mask
-
 from .torchvision_datasets import CocoDetection as TvCocoDetection
-from util.misc import get_local_rank, get_local_size
+
 import datasets.transforms as T
+
+from util.misc import get_local_rank, get_local_size
+
 
 
 class DetectionDataset(TvCocoDetection):

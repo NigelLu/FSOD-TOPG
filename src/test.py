@@ -21,7 +21,7 @@ args.dataset_file = 'coco'
 args.image_set = 'train'
 args.batch_size = 10
 
-dataset = build_dataset(args.image_set, args)
+dataset = build_dataset(args.image_set, args, with_support=args.image_set!="coco_base")
 sampler = torch.utils.data.RandomSampler(dataset)
 
 batch_sampler_train = torch.utils.data.BatchSampler(sampler, args.batch_size, drop_last=False)
