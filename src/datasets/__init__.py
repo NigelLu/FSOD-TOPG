@@ -131,22 +131,22 @@ def build_dataset(image_set, args, with_support=True):
             ann_file = root / "annotations" / 'instances_train2017.json'
             return build(args, img_folder, ann_file, image_set, activated_class_ids=coco_base_class_ids, with_support=with_support)
         if args.dataset_file == 'voc':
-            root = Path('data/voc')
+            root = Path('/scratch/xl3139/dataset/VOCdevkit/PascalVoc_CocoStyle')
             img_folder = root / "images"
             ann_file = root / "annotations" / 'pascal_trainval0712.json'
             return build(args, img_folder, ann_file, image_set, activated_class_ids=list(range(1, 20+1)), with_support=with_support)
         if args.dataset_file == 'voc_base1':
-            root = Path('data/voc')
+            root = Path('/scratch/xl3139/dataset/VOCdevkit/PascalVoc_CocoStyle')
             img_folder = root / "images"
             ann_file = root / "annotations" / 'pascal_trainval0712.json'
             return build(args, img_folder, ann_file, image_set, activated_class_ids=voc_base1_class_ids, with_support=with_support)
         if args.dataset_file == 'voc_base2':
-            root = Path('data/voc')
+            root = Path('/scratch/xl3139/dataset/VOCdevkit/PascalVoc_CocoStyle')
             img_folder = root / "images"
             ann_file = root / "annotations" / 'pascal_trainval0712.json'
             return build(args, img_folder, ann_file, image_set, activated_class_ids=voc_base2_class_ids, with_support=with_support)
         if args.dataset_file == 'voc_base3':
-            root = Path('data/voc')
+            root = Path('/scratch/xl3139/dataset/VOCdevkit/PascalVoc_CocoStyle')
             img_folder = root / "images"
             ann_file = root / "annotations" / 'pascal_trainval0712.json'
             return build(args, img_folder, ann_file, image_set, activated_class_ids=voc_base3_class_ids, with_support=with_support)
@@ -163,7 +163,7 @@ def build_dataset(image_set, args, with_support=True):
             class_ids.sort()
             return build(args, img_folder, ann_file, image_set, activated_class_ids=class_ids, with_support=False)
         if args.dataset_file in ['voc', 'voc_base1', 'voc_base2', 'voc_base3']:
-            root = Path('data/voc')
+            root = Path('/scratch/xl3139/dataset/VOCdevkit/PascalVoc_CocoStyle')
             img_folder = root / "images"
             ann_file = root / "annotations" / 'pascal_test2007.json'
             return build(args, img_folder, ann_file, image_set, activated_class_ids=list(range(1, 20+1)), with_support=False)
