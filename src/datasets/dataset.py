@@ -35,6 +35,12 @@ class DetectionDataset(TvCocoDetection):
             self.build_support_dataset(ann_file)
 
     def __getitem__(self, idx):
+        # img, target = None, None
+        # while (not img or not target):
+        #     try:
+        #         img, target = super(DetectionDataset, self).__getitem__(idx)
+        #     except:
+        #         idx += 1
         img, target = super(DetectionDataset, self).__getitem__(idx)
         target = [anno for anno in target if anno['category_id'] in self.activated_class_ids]
         image_id = self.ids[idx]
