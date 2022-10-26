@@ -18,6 +18,7 @@ import torch.nn.functional as F
 
 from torch import nn
 from typing import Dict, List
+from torchvision.models import ResNet50_Weights
 from torchvision.models._utils import IntermediateLayerGetter
 
 from util.misc import NestedTensor, is_main_process
@@ -110,7 +111,7 @@ class Backbone(BackboneBase):
         backbone = getattr(torchvision.models, name)(
             # * dilation settings for layer 2/3/4, refer to https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py#L202-L204 for more
             replace_stride_with_dilation=[False, False, dilation],
-            pretrained=is_main_process(), norm_layer=norm_layer)
+            weights=ResNet50_Weights.DEFAULT if is_main_process() else None, norm_layer=norm_layer)
         assert name not in (
             'resnet18', 'resnet34'), "number of channels are hard coded"
         super().__init__(backbone, train_backbone, return_interm_layers)

@@ -1,4 +1,5 @@
 import os
+import pdb
 import torch
 import random
 import torch.utils.data
@@ -22,6 +23,12 @@ class DetectionDataset(TvCocoDetection):
         self.activated_class_ids = activated_class_ids
         self._transforms = transforms
         self.prepare = ConvertCocoPolysToMask(return_masks)
+        print(f'Re-indexing image ids for only activated classes, previous #images is {len(self.ids)}...')
+        ids = []
+        for activated_class_id in self.activated_class_ids:
+            ids.extend(self.coco.catToImgs[activated_class_id])
+        self.ids = list(set(ids))
+        print(f'Re-index completed, current #images is {len(self.ids)}!\n')
         """
         If with_support = True, this dataset will also produce support images and support targets.
         with_support should be set to True for training, and should be set to False for inference.
@@ -37,6 +44,8 @@ class DetectionDataset(TvCocoDetection):
     def __getitem__(self, idx):
         img, target = super(DetectionDataset, self).__getitem__(idx)
         target = [anno for anno in target if anno['category_id'] in self.activated_class_ids]
+        assert len(target) > 0, f"Empty target encountered for id {idx}"
+            
         image_id = self.ids[idx]
         target = {'image_id': image_id, 'annotations': target}
         img, target = self.prepare(img, target)
