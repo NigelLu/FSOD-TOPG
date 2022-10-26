@@ -22,6 +22,12 @@ class DetectionDataset(TvCocoDetection):
         self.activated_class_ids = activated_class_ids
         self._transforms = transforms
         self.prepare = ConvertCocoPolysToMask(return_masks)
+        print(f'Re-indexing image ids for only activated classes, previous #images is {len(self.ids)}...')
+        ids = []
+        for activated_class_id in self.activated_class_ids:
+            ids.extend(self.coco.catToImgs[activated_class_id])
+        self.ids = list(set(ids))
+        print(f'Re-index completed, current #images is {len(self.ids)}!\n')
         """
         If with_support = True, this dataset will also produce support images and support targets.
         with_support should be set to True for training, and should be set to False for inference.
