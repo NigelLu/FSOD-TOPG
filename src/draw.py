@@ -9,6 +9,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 # ------------------------------------------------------------------------------------
 
+import pdb
 import cv2
 import time
 import json
@@ -169,6 +170,7 @@ def main(args):
             checkpoint = torch.hub.load_state_dict_from_url(
                 args.resume, map_location='cpu', check_hash=True)
         else:
+            print(f"Loading weight from {args.resume}")
             checkpoint = torch.load(args.resume, map_location='cpu')
         missing_keys, unexpected_keys = model.load_state_dict(checkpoint['model'], strict=False)
         unexpected_keys = [k for k in unexpected_keys if not (k.endswith('total_params') or k.endswith('total_ops'))]
@@ -209,6 +211,7 @@ def main(args):
         cv2.imwrite(f'/scratch/xl3139/FSOD-TOPG/{counter}.png', img)
 
         counter += 1
+        print(f"Current counter {counter}")
 
         if counter > 10: 
             return
