@@ -129,6 +129,9 @@ def get_args_parser():
     parser.add_argument('--num_workers', default=2, type=int)
     parser.add_argument('--cache_mode', default=False, action='store_true', help='whether to cache images on memory')
 
+    #* draw
+    parser.add_argument('--num_to_draw', default=10, type=int)
+
     return parser
 
 
@@ -213,7 +216,7 @@ def main(args):
         counter += 1
         print(f"Current counter {counter}")
 
-        if counter > 10: 
+        if counter > int(args.num_to_draw): 
             return
 
 
