@@ -190,7 +190,7 @@ def main(args):
 
     counter = 1
 
-    for samples, target in data_loader_train:
+    for samples, targets in data_loader_train:
         # * (1, 3, h, w)
         samples = samples.to(device)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
