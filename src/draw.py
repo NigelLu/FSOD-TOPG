@@ -191,6 +191,9 @@ def main(args):
     counter = 1
 
     for samples, targets in data_loader_train:
+
+        img_info = dataset_train.coco.imgs[targets[0]['image_id'].item()]
+
         # * (1, 3, h, w)
         samples = samples.to(device)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
@@ -206,9 +209,9 @@ def main(args):
         target_box = pred_boxes[0, int(target_box_idx.item()//21), :]
 
         # * drawing preparation
-        _, _, h, w = samples.tensors.shape
+        h, w = img_info['orig_size']
         x1, y1, x2, y2 = int(target_box[0].item()*w), int(target_box[1].item()*h), int(target_box[2].item()*w), int(target_box[3].item()*h)
-        img = samples.tensors[0].reshape((h,w,3)).cpu().detach().numpy()
+        img = cv2.imread(f'/scratch/xl3139/dataset/VOCdevkit/PascalVoc_CocoStyle/images/{img_info["file_name"]}')
 
         img = cv2.rectangle(img, (x1,y1), (x2,y2), color=(0,255,0), thickness=2)
         cv2.imwrite(f'/scratch/xl3139/FSOD-TOPG/{counter}.png', img)
