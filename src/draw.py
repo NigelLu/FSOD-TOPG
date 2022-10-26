@@ -9,6 +9,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 # ------------------------------------------------------------------------------------
 
+import pdb
 import cv2
 import time
 import json
@@ -128,6 +129,9 @@ def get_args_parser():
     parser.add_argument('--num_workers', default=2, type=int)
     parser.add_argument('--cache_mode', default=False, action='store_true', help='whether to cache images on memory')
 
+    #* draw
+    parser.add_argument('--num_to_draw', default=10, type=int)
+
     return parser
 
 
@@ -169,6 +173,7 @@ def main(args):
             checkpoint = torch.hub.load_state_dict_from_url(
                 args.resume, map_location='cpu', check_hash=True)
         else:
+            print(f"Loading weight from {args.resume}")
             checkpoint = torch.load(args.resume, map_location='cpu')
         missing_keys, unexpected_keys = model.load_state_dict(checkpoint['model'], strict=False)
         unexpected_keys = [k for k in unexpected_keys if not (k.endswith('total_params') or k.endswith('total_ops'))]
@@ -185,7 +190,8 @@ def main(args):
 
     counter = 1
 
-    for samples, target in data_loader_train:
+    for samples, targets in data_loader_train:
+        img_info = dataset_train.coco.imgs[targets[0]['image_id'].item()]
         # * (1, 3, h, w)
         samples = samples.to(device)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
@@ -198,19 +204,20 @@ def main(args):
 
         _, target_box_idx = torch.max(pred_logits.flatten(1,2), dim=1)
         target_box_idx = target_box_idx[0]
-        target_box = pred_boxes[0, int(target_box.item()//21), :]
+        target_box = pred_boxes[0, int(target_box_idx.item()//21), :]
 
         # * drawing preparation
-        _, _, h, w = samples.tensors.shape
+        h, w = img_info['height'], img_info['width']
         x1, y1, x2, y2 = int(target_box[0].item()*w), int(target_box[1].item()*h), int(target_box[2].item()*w), int(target_box[3].item()*h)
-        img = samples.tensors[0].reshape((h,w,3)).cpu().detach().numpy()
+        img = cv2.imread(f'/scratch/xl3139/dataset/VOCdevkit/PascalVoc_CocoStyle/images/{img_info["file_name"]}')
 
         img = cv2.rectangle(img, (x1,y1), (x2,y2), color=(0,255,0), thickness=2)
         cv2.imwrite(f'/scratch/xl3139/FSOD-TOPG/{counter}.png', img)
 
         counter += 1
+        print(f"Current counter {counter}")
 
-        if counter > 10: 
+        if counter > int(args.num_to_draw): 
             return
 
 
