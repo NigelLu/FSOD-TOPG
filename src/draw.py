@@ -203,7 +203,7 @@ def main(args):
 
         _, target_box_idx = torch.max(pred_logits.flatten(1,2), dim=1)
         target_box_idx = target_box_idx[0]
-        target_box = pred_boxes[0, int(target_box.item()//21), :]
+        target_box = pred_boxes[0, int(target_box_idx.item()//21), :]
 
         # * drawing preparation
         _, _, h, w = samples.tensors.shape
