@@ -39,7 +39,7 @@ def get_args_parser():
     parser.add_argument('--lr_backbone', default=2e-5, type=float)
     parser.add_argument('--lr_linear_proj_names', default=['reference_points', 'sampling_offsets'], type=str, nargs='+')
     parser.add_argument('--lr_linear_proj_mult', default=0.1, type=float)
-    parser.add_argument('--batch_size', default=2, type=int)
+    parser.add_argument('--batch_size', default=1, type=int)
     parser.add_argument('--weight_decay', default=1e-4, type=float)
     parser.add_argument('--epochs', default=5, type=int)
     parser.add_argument('--lr_drop', default=40, type=int)
@@ -191,9 +191,7 @@ def main(args):
     counter = 1
 
     for samples, targets in data_loader_train:
-
         img_info = dataset_train.coco.imgs[targets[0]['image_id'].item()]
-
         # * (1, 3, h, w)
         samples = samples.to(device)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
@@ -209,7 +207,8 @@ def main(args):
         target_box = pred_boxes[0, int(target_box_idx.item()//21), :]
 
         # * drawing preparation
-        h, w = img_info['orig_size']
+        h, w = img_info['height'], img_info['width']
+
         x1, y1, x2, y2 = int(target_box[0].item()*w), int(target_box[1].item()*h), int(target_box[2].item()*w), int(target_box[3].item()*h)
         img = cv2.imread(f'/scratch/xl3139/dataset/VOCdevkit/PascalVoc_CocoStyle/images/{img_info["file_name"]}')
 
