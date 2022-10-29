@@ -9,9 +9,11 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 # ------------------------------------------------------------------------------------
 
+import os
 import pdb
 import cv2
 import torch
+import shutil
 import random
 import argparse
 import numpy as np
@@ -109,7 +111,7 @@ def get_args_parser():
     parser.add_argument('--focal_alpha', default=0.25, type=float)
 
     # dataset parameters
-    parser.add_argument('--dataset_file', default='coco')
+    parser.add_argument('--dataset_file', default='voc_base1')
     parser.add_argument('--coco_path', default='/coco', type=str)
     parser.add_argument('--coco_panoptic_path', type=str)
     parser.add_argument('--remove_difficult', action='store_true')
@@ -119,23 +121,45 @@ def get_args_parser():
     parser.add_argument('--device', default='cuda',
                         help='device to use for training / testing')
     parser.add_argument('--seed', default=42, type=int)
-    parser.add_argument('--resume', default='', help='resume from checkpoint')
+    parser.add_argument('--resume', default='/scratch/xl3139/FSOD-TOPG/output-filtered-25/checkpoint.pth', help='resume from checkpoint')
     parser.add_argument('--start_epoch', default=0, type=int, metavar='N',
                         help='start epoch')
     parser.add_argument('--eval', action='store_true')
-    parser.add_argument('--num_workers', default=2, type=int)
+    parser.add_argument('--num_workers', default=1, type=int)
     parser.add_argument('--cache_mode', default=False,
                         action='store_true', help='whether to cache images on memory')
 
     # * draw
     parser.add_argument('--num_to_draw', default=10, type=int)
     parser.add_argument('--dataset_root', default="/scratch/xl3139/dataset/VOCdevkit/PascalVoc_CocoStyle", type=str)
+    parser.add_argument('--save_path', default="/scratch/xl3139/FSOD-TOPG/demo", type=str)
+    parser.add_argument('--box_per_img', default=2, type=int)
 
     return parser
 
 
 def main(args):
-    print(args)
+
+    print(args, '\n')
+
+    assert os.path.isdir(args.dataset_root), f'--dataset_root expects a folder path, {args.dataset_root} is not a folder'
+    assert os.path.isdir(args.save_path), f'--save_path expects a folder path, {args.save_path} is not a folder'
+    assert os.path.isfile(args.resume), f'--resume expects path to a .pth weight file, {args.resume} is not a file'
+
+    if len(os.listdir(args.save_path)) > 0:
+        print(f"Warning: the save path '{args.save_path}' you specified is NOT empty\nIt contains")
+
+        dir_content = os.listdir(args.save_path)
+        dir_content.sort()
+        print('\n'.join(dir_content))
+        should_proceed = ''
+        while should_proceed != 'yes' and should_proceed != 'no':
+            should_proceed = input("Would you like us to empty the directory for you and proceed? (yes or no)\n> ").lower()
+            if should_proceed == 'no':
+                return
+            if should_proceed == 'yes':
+                shutil.rmtree(args.save_path, ignore_errors=True)
+                os.mkdir(args.save_path)
 
     device = torch.device(args.device)
 
@@ -199,23 +223,29 @@ def main(args):
 
         pred_logits, pred_boxes = outputs['pred_logits'], outputs['pred_boxes']
 
-        _, target_box_idx = torch.max(pred_logits.flatten(1, 2), dim=1)
-        target_box_idx = target_box_idx[0]
-        target_box = pred_boxes[0, int(target_box_idx.item()//21), :]
+        # * (1, 300, 21) -> (1, 300, 21)
+        pred_logits = torch.nn.Softmax(dim=2)(pred_logits)
+        # * (1, 300, 21) -> (1, 300), both
+        target_box_confidence, target_box_cls = [ele.squeeze(0) for ele in torch.max(pred_logits, dim=2)]
+        _, topk_indices = torch.topk(target_box_confidence, args.box_per_img, dim=0)
+
+        target_boxes = pred_boxes[0, topk_indices, :]
 
         # * drawing preparation
         h, w = img_info['height'], img_info['width']
-        x1, y1, x2, y2 = int(target_box[0].item()*w), int(target_box[1].item()*h), int(
-            target_box[2].item()*w), int(target_box[3].item()*h)
         img = cv2.imread(
-            f'${args.dataset_root}/images/{img_info["file_name"]}')
+            f'{args.dataset_root}/images/{img_info["file_name"]}')
 
-        img = cv2.rectangle(img, (x1, y1), (x2, y2),
-                            color=(0, 255, 0), thickness=2)
-        cv2.imwrite(f'/scratch/xl3139/FSOD-TOPG/{counter}.png', img)
+        for box_idx in range(args.box_per_img):
+            box = target_boxes[box_idx]
+            x1, y1, x2, y2 = int(box[0].item()*w), int(box[1].item()*h), int(
+                box[2].item()*w), int(box[3].item()*h)
 
+            img = cv2.rectangle(img, (x1, y1), (x2, y2),
+                                color=(0, 255, 0), thickness=2)
+        cv2.imwrite(f'{args.save_path}/{counter}.png', img)
+        print(f"Saved to {args.save_path}/{counter}.png")
         counter += 1
-        print(f"Current counter {counter}")
 
         if counter > int(args.num_to_draw):
             return
