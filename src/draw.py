@@ -19,6 +19,7 @@ import argparse
 import numpy as np
 
 from pathlib import Path
+from einops import rearrange
 from torch.utils.data import DataLoader
 
 import util.misc as utils
@@ -121,7 +122,7 @@ def get_args_parser():
     parser.add_argument('--device', default='cuda',
                         help='device to use for training / testing')
     parser.add_argument('--seed', default=42, type=int)
-    parser.add_argument('--resume', default='/scratch/xl3139/FSOD-TOPG/output-filtered-25/checkpoint.pth', help='resume from checkpoint')
+    parser.add_argument('--resume', default='/scratch/xl3139/FSOD-TOPG/outputs/output-filtered-25/checkpoint.pth', help='resume from checkpoint')
     parser.add_argument('--start_epoch', default=0, type=int, metavar='N',
                         help='start epoch')
     parser.add_argument('--eval', action='store_true')
@@ -216,6 +217,9 @@ def main(args):
         # * (1, 3, h, w)
         samples = samples.to(device)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+
+        img1 = rearrange(samples.tensors[0], 'c h w -> h w c').cpu().detach().numpy()
+        cv2.imwrite('/scratch/xl3139/FSOD-TOPG/hello1.jpg', img1)
 
         # * dict_keys(['pred_logits', 'pred_boxes', 'aux_outputs'])
         # * (1, 300, 21) -- (1, 300, 4)

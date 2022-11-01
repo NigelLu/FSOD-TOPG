@@ -36,7 +36,6 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
     print_freq = 10
 
     for samples, targets in metric_logger.log_every(data_loader, print_freq, header):
-    # for _ in metric_logger.log_every(range(len(data_loader)), print_freq, header):
         samples = samples.to(device)
         outputs = model(samples)
         loss_dict = criterion(outputs, targets)
