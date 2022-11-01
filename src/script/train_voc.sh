@@ -4,7 +4,7 @@
 #SBATCH --ntasks=1
 #SBATCH --gres=gpu
 #SBATCH --mem=200GB
-#SBATCH --time=48:00:00
+#SBATCH --time=168:00:00
 #SBATCH --mail-type=END
 #SBATCH --cpus-per-task=2
 #SBATCH --mail-user=xl3139@nyu.edu
